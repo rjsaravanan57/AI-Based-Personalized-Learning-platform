@@ -69,30 +69,51 @@ export async function recommendResources(topicPerformance) {
   return recommendations
 }
 
+function sampleArray(array, count) {
+  const items = [...array]
+  for (let i = items.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[items[i], items[j]] = [items[j], items[i]]
+  }
+  return items.slice(0, count)
+}
+
 export async function buildAdaptiveQuestions(level) {
   const ratios = {
     Beginner: { Easy: 0.6, Medium: 0.3, Hard: 0.1 },
     Intermediate: { Easy: 0.3, Medium: 0.5, Hard: 0.2 },
     Advanced: { Easy: 0.2, Medium: 0.3, Hard: 0.5 }
   }
-  const questions = await Question.find()
-  const selected = []
-  const counts = { Easy: 0, Medium: 0, Hard: 0 }
   const total = 10
   const levelRatios = ratios[level] || ratios.Beginner
+  const counts = {}
   Object.entries(levelRatios).forEach(([difficulty, ratio]) => {
     counts[difficulty] = Math.max(1, Math.round(total * ratio))
   })
-  const grouped = questions.reduce((acc, question) => {
-    acc[question.difficulty] = acc[question.difficulty] || []
-    acc[question.difficulty].push(question)
-    return acc
-  }, {})
+
+  const difficultyBuckets = {}
+  for (const difficulty of ['Easy', 'Medium', 'Hard']) {
+    difficultyBuckets[difficulty] = await Question.find({ difficulty }).lean()
+  }
+
+  const selected = []
   Object.entries(counts).forEach(([difficulty, count]) => {
-    const bucket = grouped[difficulty] || []
-    selected.push(...bucket.slice(0, count))
+    const bucket = difficultyBuckets[difficulty] || []
+    if (bucket.length === 0) return
+    if (bucket.length <= count) {
+      selected.push(...bucket)
+    } else {
+      selected.push(...sampleArray(bucket, count))
+    }
   })
-  return selected.slice(0, total)
+
+  if (selected.length < total) {
+    const extras = await Question.find({ difficulty: { $in: ['Easy', 'Medium', 'Hard'] } }).lean()
+    const remaining = extras.filter((question) => !selected.some((selectedItem) => selectedItem._id.equals(question._id)))
+    selected.push(...sampleArray(remaining, Math.min(total - selected.length, remaining.length)))
+  }
+
+  return sampleArray(selected, Math.min(total, selected.length)).slice(0, total)
 }
 
 export function suggestCareers(subjects, interests) {

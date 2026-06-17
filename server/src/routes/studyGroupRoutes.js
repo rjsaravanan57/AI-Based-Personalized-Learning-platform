@@ -1,7 +1,6 @@
 import express from 'express'
-import { findStudyGroup } from '../controllers/studyGroupController.js'
-import { protect } from '../middleware/authMiddleware.js'
+import studyRoutes from './studyRoutes.js'
 
 const router = express.Router()
-router.get('/match', protect, findStudyGroup)
+router.use('/', studyRoutes)
 export default router
