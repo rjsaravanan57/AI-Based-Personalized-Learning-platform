@@ -10,6 +10,7 @@ import careerRoutes from './routes/careerRoutes.js'
 import progressRoutes from './routes/progressRoutes.js'
 import studyGroupRoutes from './routes/studyGroupRoutes.js'
 import teacherRoutes from './routes/teacherRoutes.js'
+import todoRoutes from './routes/todoRoutes.js'
 import { errorHandler } from './middleware/errorMiddleware.js'
 
 dotenv.config()
@@ -25,6 +26,7 @@ app.use('/api/career', careerRoutes)
 app.use('/api/progress', progressRoutes)
 app.use('/api/study-groups', studyGroupRoutes)
 app.use('/api/teacher', teacherRoutes)
+app.use('/api/todos', todoRoutes)
 app.use(errorHandler)
 
 const PORT = process.env.PORT || 4000

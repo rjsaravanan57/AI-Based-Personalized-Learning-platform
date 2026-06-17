@@ -9,6 +9,8 @@ const userSchema = new mongoose.Schema({
   interestedSubjects: { type: [String], default: [] },
   careerInterests: { type: [String], default: [] },
   learningStyle: { type: String, enum: ['Visual', 'Reading', 'Practice', 'Mixed'], default: 'Mixed' },
+  dailyGoalMinutes: { type: Number, default: 60 },
+  studySessions: { type: [{ date: String, minutes: Number }], default: [] },
   history: { type: [String], default: [] }
 }, { timestamps: true })
 
