@@ -10,6 +10,8 @@ export default function StudyGroupPage() {
   const [selectedGroupId, setSelectedGroupId] = useState(null)
   const [messages, setMessages] = useState([])
   const [messageText, setMessageText] = useState('')
+  const [materials, setMaterials] = useState([])
+  const [uploadingFile, setUploadingFile] = useState(null)
   const [status, setStatus] = useState('')
   const [error, setError] = useState('')
 
@@ -38,13 +40,18 @@ export default function StudyGroupPage() {
     async function loadMessages() {
       if (!selectedGroupId) {
         setMessages([])
+        setMaterials([])
         return
       }
       try {
-        const response = await api.get(`/study-groups/groups/${selectedGroupId}/messages`)
-        setMessages(response.data)
+        const [messagesResp, materialsResp] = await Promise.all([
+          api.get(`/study-groups/groups/${selectedGroupId}/messages`),
+          api.get(`/study-groups/groups/${selectedGroupId}/materials`)
+        ])
+        setMessages(messagesResp.data)
+        setMaterials(materialsResp.data)
       } catch (err) {
-        setError('Unable to load group messages')
+        setError('Unable to load group data')
       }
     }
     loadMessages()
@@ -112,7 +119,47 @@ export default function StudyGroupPage() {
     try {
       await api.post(`/study-groups/groups/${selectedGroupId}/messages`, { message: messageText.trim() })
       setMessageText('')
-      const response = await api.get(`/study-groups/groups/${selectedGroupId}/messages`)
+   
+
+  const handleUploadFile = async (event) => {
+    const file = event.target.files?.[0]
+    if (!file || !selectedGroupId) return
+    
+    setStatus('')
+    setError('')
+    setUploadingFile(file.name)
+
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      await api.post(`/study-groups/groups/${selectedGroupId}/materials`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      })
+      setStatus('File uploaded successfully.')
+      setUploadingFile(null)
+      event.target.value = ''
+      const response = await api.get(`/study-groups/groups/${selectedGroupId}/materials`)
+      setMaterials(response.data)
+    } catch (err) {
+      setError(err.response?.data?.error || 'Unable to upload file')
+      setUploadingFile(null)
+    }
+  }
+
+  const handleDownloadMaterial = (materialId, fileName) => {
+    window.location.href = `http://localhost:4000/api/study-groups/materials/${materialId}/download`
+  }
+
+  const handleDeleteMaterial = async (materialId) => {
+    try {
+      await api.delete(`/study-groups/materials/${materialId}`)
+      setStatus('Material deleted successfully.')
+      const response = await api.get(`/study-groups/groups/${selectedGroupId}/materials`)
+      setMaterials(response.data)
+    } catch (err) {
+      setError(err.response?.data?.error || 'Unable to delete material')
+    }
+  }   const response = await api.get(`/study-groups/groups/${selectedGroupId}/messages`)
       setMessages(response.data)
     } catch (err) {
       setError(err.response?.data?.error || 'Unable to send message')
@@ -230,6 +277,61 @@ export default function StudyGroupPage() {
               <p className="text-slate-400">You have not joined any study groups yet.</p>
             )}
           </div>
+        </section>
+
+        <section className="overflow-hidden rounded-[2rem] border border-slate-800/70 bg-slate-950/85 p-8 shadow-glow">
+          <div className="mb-6 flex items-center justify-between gap-4">
+            <div>
+              <h2 className="text-2xl font-semibold text-white">Shared materials</h2>
+              <p className="text-sm text-slate-400">Upload and access study resources with group members.</p>
+            </div>
+          </div>
+
+          {!selectedGroup ? (
+            <p className="text-slate-400">Select a group to view and share materials.</p>
+          ) : (
+            <div className="space-y-6">
+              <div className="rounded-3xl border border-slate-800/70 bg-slate-900/80 p-5">
+                <label className="flex cursor-pointer items-center justify-center rounded-2xl border-2 border-dashed border-slate-700 px-4 py-6 transition hover:border-cyan-400">
+                  <input type="file" onChange={handleUploadFile} disabled={uploadingFile !== null} className="hidden" />
+                  <span className="text-sm font-semibold text-cyan-300">{uploadingFile ? `Uploading ${uploadingFile}...` : 'Click to upload a file'}</span>
+                </label>
+              </div>
+
+              {materials.length ? (
+                <div className="space-y-3">
+                  {materials.map((material) => (
+                    <div key={material._id} className="flex items-center justify-between gap-4 rounded-3xl border border-slate-800/70 bg-slate-900/80 px-5 py-4">
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-semibold text-white">{material.fileName}</p>
+                        <p className="text-xs text-slate-400">Uploaded by {material.uploadedBy.name} on {new Date(material.uploadedAt).toLocaleDateString()}</p>
+                      </div>
+                      <div className="flex flex-shrink-0 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleDownloadMaterial(material._id, material.fileName)}
+                          className="rounded-full bg-cyan-500 px-3 py-2 text-xs font-semibold text-slate-950 transition hover:bg-cyan-400"
+                        >
+                          Download
+                        </button>
+                        {material.uploadedBy._id === (typeof api === 'object' ? api.defaults?.headers?.Authorization : null) && (
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteMaterial(material._id)}
+                            className="rounded-full border border-red-600 px-3 py-2 text-xs font-semibold text-red-200 transition hover:bg-red-500/10"
+                          >
+                            Delete
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-slate-400">No materials shared yet. Be the first to upload!</p>
+              )}
+            </div>
+          )}
         </section>
 
         <section className="overflow-hidden rounded-[2rem] border border-slate-800/70 bg-slate-950/85 p-8 shadow-glow">
