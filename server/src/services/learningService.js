@@ -6,8 +6,8 @@ import Question from '../models/Question.js'
 import Resource from '../models/Resource.js'
 
 const classificationThresholds = {
-  beginner: 50,
-  intermediate: 75
+  beginner: 33,      // 0-32% → Beginner
+  intermediate: 67   // 33-66% → Intermediate, 67-100% → Advanced
 }
 
 const roadmapTemplates = {
@@ -73,7 +73,7 @@ function sampleArray(array, count) {
   const items = [...array]
   for (let i = items.length - 1; i > 0; i -= 1) {
     const j = Math.floor(Math.random() * (i + 1))
-    ;[items[i], items[j]] = [items[j], items[i]]
+      ;[items[i], items[j]] = [items[j], items[i]]
   }
   return items.slice(0, count)
 }

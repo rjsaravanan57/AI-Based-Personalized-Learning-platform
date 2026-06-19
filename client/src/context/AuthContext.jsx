@@ -1,8 +1,7 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react'
-import axios from 'axios'
+import { createContext, useContext, useEffect, useState } from 'react'
+import api from '../api/client.js'
 
 const AuthContext = createContext(null)
-const api = axios.create({ baseURL: 'http://localhost:4000/api' })
 
 function normalizeEmail(email) {
   return email?.trim().toLowerCase() || ''

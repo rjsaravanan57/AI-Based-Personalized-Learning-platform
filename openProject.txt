@@ -1,0 +1,40 @@
+Easy way to run the project
+
+Recommended: run everything from the project root.
+
+1. Open a terminal in the project root.
+
+2. Install dependencies for both apps:
+   npm install
+   npm install --prefix server
+   npm install --prefix client
+
+3. Start both frontend and backend together:
+   npm run dev
+   This runs the server and client in one command.
+
+4. The app URLs will appear in the terminal output.
+   - Frontend (Vite): usually http://localhost:5173
+   - Backend (Express): usually http://localhost:4000
+   If those ports are already in use, the tools will automatically choose other available ports.
+
+5. The frontend is already configured to talk to the backend through a Vite proxy, so you do not need to manually change any API URLs.
+
+6. If you want to run them separately:
+   - Backend:
+     cd server
+     npm install
+     npm run dev
+   - Frontend:
+     cd client
+     npm install
+     npm run dev
+
+Important setup requirements:
+- MongoDB must be running locally.
+- Create a server/.env file with:
+  - GEMINI_API_KEY=your_google_gemini_api_key
+  - JWT_SECRET=your_secret_key
+  - MONGODB_URI=mongodb://localhost:27017/ai-learning
+- The AI features require a valid Gemini API key and may return a temporary 503 message if the API quota is exceeded.
+

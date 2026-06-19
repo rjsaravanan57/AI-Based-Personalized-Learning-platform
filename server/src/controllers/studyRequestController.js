@@ -98,3 +98,42 @@ export async function getMyGroups(req, res, next) {
     next(error)
   }
 }
+
+export async function addMemberToGroup(req, res, next) {
+  try {
+    const { groupId, userId } = req.body
+    if (!groupId || !userId) {
+      return res.status(400).json({ error: 'Group ID and User ID are required' })
+    }
+
+    // Check if user is a member of the group
+    const group = await StudyGroup.findById(groupId)
+    if (!group) {
+      return res.status(404).json({ error: 'Group not found' })
+    }
+
+    if (!group.members.includes(req.user._id)) {
+      return res.status(403).json({ error: 'You are not a member of this group' })
+    }
+
+    // Check if user is already a member
+    if (group.members.includes(userId)) {
+      return res.status(400).json({ error: 'User is already a member of this group' })
+    }
+
+    // Check if user exists
+    const user = await User.findById(userId)
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' })
+    }
+
+    // Add member to group
+    group.members.push(userId)
+    await group.save()
+
+    const populated = await group.populate('members', 'name email educationLevel')
+    res.json(populated)
+  } catch (error) {
+    next(error)
+  }
+}
