@@ -1,7 +1,7 @@
 import express from 'express'
-import dotenv from 'dotenv'
 import cors from 'cors'
 import mongoose from 'mongoose'
+import serverless from 'serverless-http'
 import authRoutes from './routes/authRoutes.js'
 import assessmentRoutes from './routes/assessmentRoutes.js'
 import questionRoutes from './routes/questionRoutes.js'
@@ -13,10 +13,17 @@ import teacherRoutes from './routes/teacherRoutes.js'
 import aiRoutes from './routes/aiRoutes.js'
 import todoRoutes from './routes/todoRoutes.js'
 import { errorHandler } from './middleware/errorMiddleware.js'
+import { env, ensureRequiredEnv } from './config/env.js'
 
-dotenv.config()
 const app = express()
-app.use(cors())
+const allowedOrigins = env.CLIENT_URL
+  ? env.CLIENT_URL.split(',').map((item) => item.trim()).filter(Boolean)
+  : []
+
+app.use(cors({
+  origin: allowedOrigins.length > 0 ? allowedOrigins : true,
+  credentials: true
+}))
 app.use(express.json())
 
 app.use('/api/auth', authRoutes)
@@ -29,10 +36,12 @@ app.use('/api/study-groups', studyGroupRoutes)
 app.use('/api/teacher', teacherRoutes)
 app.use('/api/ai', aiRoutes)
 app.use('/api/todos', todoRoutes)
-app.use(errorHandler)
 
-const DEFAULT_PORT = Number(process.env.PORT || 4000)
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/ai-learning'
+app.get('/health', (_req, res) => {
+  res.json({ status: 'ok', environment: env.NODE_ENV })
+})
+
+app.use(errorHandler)
 
 function startServer(port, attemptsLeft = 5) {
   const server = app.listen(port, () => {
@@ -53,10 +62,27 @@ function startServer(port, attemptsLeft = 5) {
   })
 }
 
-mongoose.connect(MONGODB_URI)
-  .then(() => {
-    startServer(DEFAULT_PORT)
-  })
-  .catch((error) => {
+async function connectDatabase() {
+  try {
+    await mongoose.connect(env.MONGO_URI, {
+      serverSelectionTimeoutMS: 8000,
+      autoIndex: env.NODE_ENV !== 'production'
+    })
+
+    console.log('MongoDB connected successfully')
+
+    if (!process.env.VERCEL) {
+      startServer(env.PORT)
+    }
+  } catch (error) {
     console.error('MongoDB connection error:', error)
-  })
+    process.exit(1)
+  }
+}
+
+if (env.NODE_ENV !== 'test') {
+  ensureRequiredEnv()
+  connectDatabase()
+}
+
+export default process.env.VERCEL ? serverless(app) : app

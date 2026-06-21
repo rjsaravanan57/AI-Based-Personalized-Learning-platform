@@ -10,7 +10,7 @@ import Roadmap from './models/Roadmap.js'
 import StudyGroup from './models/StudyGroup.js'
 
 dotenv.config()
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/ai-learning'
+const MONGODB_URI = process.env.MONGO_URI || process.env.MONGODB_URI || 'mongodb://localhost:27017/ai-learning'
 
 async function seed() {
   await mongoose.connect(MONGODB_URI)
