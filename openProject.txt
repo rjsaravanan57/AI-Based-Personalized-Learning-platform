@@ -1,0 +1,41 @@
+Easy way to run the project
+
+Recommended: run everything from the project root
+
+1. Open a terminal in the project root.
+
+2. Install dependencies:
+   npm install
+
+3. Start both frontend and backend together:
+   npm run dev
+
+4. Open the frontend in your browser:
+   Usually: http://localhost:5173
+   If 5173 is already busy, Vite will automatically choose another available port (for example 5174).
+
+5. The backend will be available at:
+   Usually: http://localhost:4000
+   If 4000 is already busy, the server will automatically try the next available port (for example 4003).
+
+6. The exact URLs will be shown in the terminal output when the app starts.
+
+If you want to run them separately:
+
+Terminal 1 (backend):
+   cd server
+   npm install
+   npm run dev
+
+Terminal 2 (frontend):
+   cd client
+   npm install
+   npm run dev
+
+Important setup requirements:
+- MongoDB must be running locally.
+- Create a server/.env file with:
+  - GEMINI_API_KEY=your_api_key
+  - JWT_SECRET=your_secret_key
+  - MONGODB_URI=mongodb://localhost:27017/ai-learning (optional if you use the default)
+

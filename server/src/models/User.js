@@ -1,5 +1,10 @@
 import mongoose from 'mongoose'
 
+const studySessionSchema = new mongoose.Schema({
+  date: { type: String, required: true },
+  minutes: { type: Number, default: 0 }
+}, { _id: false })
+
 const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true, lowercase: true, trim: true },
@@ -9,7 +14,9 @@ const userSchema = new mongoose.Schema({
   interestedSubjects: { type: [String], default: [] },
   careerInterests: { type: [String], default: [] },
   learningStyle: { type: String, enum: ['Visual', 'Reading', 'Practice', 'Mixed'], default: 'Mixed' },
-  history: { type: [String], default: [] }
+  history: { type: [String], default: [] },
+  dailyGoalMinutes: { type: Number, default: 60 },
+  studySessions: { type: [studySessionSchema], default: [] }
 }, { timestamps: true })
 
 export default mongoose.model('User', userSchema)

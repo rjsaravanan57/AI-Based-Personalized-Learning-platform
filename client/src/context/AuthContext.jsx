@@ -2,7 +2,9 @@ import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import axios from 'axios'
 
 const AuthContext = createContext(null)
-const api = axios.create({ baseURL: 'http://localhost:4000/api' })
+const api = axios.create({
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:4002/api'
+})
 
 function normalizeEmail(email) {
   return email?.trim().toLowerCase() || ''
@@ -19,7 +21,9 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     const requestInterceptor = api.interceptors.request.use((config) => {
-      if (token) config.headers.Authorization = `Bearer ${token}`
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`
+      }
       return config
     })
     return () => api.interceptors.request.eject(requestInterceptor)
@@ -27,8 +31,10 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     if (token) {
+      api.defaults.headers.common.Authorization = `Bearer ${token}`
       localStorage.setItem('ai_learning_token', token)
     } else {
+      delete api.defaults.headers.common.Authorization
       localStorage.removeItem('ai_learning_token')
     }
   }, [token])
@@ -47,8 +53,11 @@ export function AuthProvider({ children }) {
     try {
       const payload = { ...credentials, email: normalizeEmail(credentials.email) }
       const response = await api.post('/auth/login', payload)
-      setUser(response.data.user)
-      setToken(response.data.token)
+      const nextToken = response.data.token
+      const nextUser = response.data.user
+      api.defaults.headers.common.Authorization = `Bearer ${nextToken}`
+      setUser(nextUser)
+      setToken(nextToken)
     } catch (err) {
       setError(err.response?.data?.error || err.message || 'Login failed')
       throw err
@@ -63,8 +72,11 @@ export function AuthProvider({ children }) {
     try {
       const payload = { ...data, email: normalizeEmail(data.email) }
       const response = await api.post('/auth/register', payload)
-      setUser(response.data.user)
-      setToken(response.data.token)
+      const nextToken = response.data.token
+      const nextUser = response.data.user
+      api.defaults.headers.common.Authorization = `Bearer ${nextToken}`
+      setUser(nextUser)
+      setToken(nextToken)
     } catch (err) {
       setError(err.response?.data?.error || err.message || 'Registration failed')
       throw err
@@ -74,6 +86,7 @@ export function AuthProvider({ children }) {
   }
 
   const logout = () => {
+    delete api.defaults.headers.common.Authorization
     setUser(null)
     setToken('')
     localStorage.removeItem('ai_learning_token')

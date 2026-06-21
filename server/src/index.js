@@ -10,6 +10,8 @@ import careerRoutes from './routes/careerRoutes.js'
 import progressRoutes from './routes/progressRoutes.js'
 import studyGroupRoutes from './routes/studyGroupRoutes.js'
 import teacherRoutes from './routes/teacherRoutes.js'
+import aiRoutes from './routes/aiRoutes.js'
+import todoRoutes from './routes/todoRoutes.js'
 import { errorHandler } from './middleware/errorMiddleware.js'
 
 dotenv.config()
@@ -25,15 +27,36 @@ app.use('/api/career', careerRoutes)
 app.use('/api/progress', progressRoutes)
 app.use('/api/study-groups', studyGroupRoutes)
 app.use('/api/teacher', teacherRoutes)
+app.use('/api/ai', aiRoutes)
+app.use('/api/todos', todoRoutes)
 app.use(errorHandler)
 
-const PORT = process.env.PORT || 4000
+const DEFAULT_PORT = Number(process.env.PORT || 4000)
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/ai-learning'
 
-mongoose.connect(MONGODB_URI).then(() => {
-  app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`)
+function startServer(port, attemptsLeft = 5) {
+  const server = app.listen(port, () => {
+    console.log(`Server running on http://localhost:${port}`)
   })
-}).catch((error) => {
-  console.error('MongoDB connection error:', error)
-})
+
+  server.on('error', (error) => {
+    if (error.code === 'EADDRINUSE' && attemptsLeft > 0) {
+      console.warn(`Port ${port} is busy. Trying ${port + 1} instead...`)
+      server.close(() => {
+        startServer(port + 1, attemptsLeft - 1)
+      })
+      return
+    }
+
+    console.error('Server startup error:', error)
+    process.exit(1)
+  })
+}
+
+mongoose.connect(MONGODB_URI)
+  .then(() => {
+    startServer(DEFAULT_PORT)
+  })
+  .catch((error) => {
+    console.error('MongoDB connection error:', error)
+  })
