@@ -7,11 +7,12 @@
   "engines": {
     "node": ">=18.18.0"
   },
-  "scripts": {
-    "dev": "nodemon src/index.js",
-    "start": "node src/index.js",
-    "seed": "node src/seed.js"
-  },
+"scripts": {
+  "dev": "nodemon src/index.js",
+  "start": "node src/index.js",
+  "build": "echo \"No build step required for this API\"",
+  "seed": "node src/seed.js"
+},
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
     "bcryptjs": "^2.4.3",
