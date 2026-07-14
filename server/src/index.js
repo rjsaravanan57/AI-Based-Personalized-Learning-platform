@@ -25,8 +25,29 @@ const allowedOrigins = env.CLIENT_URL
   ? env.CLIENT_URL.split(',').map((item) => item.trim()).filter(Boolean)
   : []
 
+function isAllowedOrigin(origin) {
+  if (!origin) return true
+  if (allowedOrigins.length === 0) return true
+  if (allowedOrigins.includes(origin)) return true
+  try {
+    const { hostname } = new URL(origin)
+    if (hostname.endsWith('.vercel.app') && hostname.includes('ai-based-personalized-learning-platform')) {
+      return true
+    }
+  } catch {
+    return false
+  }
+  return false
+}
+
 app.use(cors({
-  origin: allowedOrigins.length > 0 ? allowedOrigins : true,
+  origin: (origin, callback) => {
+    if (isAllowedOrigin(origin)) {
+      callback(null, true)
+    } else {
+      callback(new Error('Not allowed by CORS'))
+    }
+  },
   credentials: true
 }))
 app.use(express.json())
